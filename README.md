@@ -11,9 +11,11 @@ To use:
 
 - Search for `CHANGEME` in the `Vagrantfile` and `bootstrap.sh` for any areas you need to adjust for your system.
 
+    Most important is to set `VAGRANT_UID` and `VAGRANT_GID` in `bootstrap.sh` to your user's UID/GID address on the host (find those using `id -u` and `id -g`).
+
 - Run `vagrant up`.  You will probably have to enter your root password so that Vagrant can set up NFS.
 
-- Run `vagrant reload` (REQUIRED).
+- Run `vagrant reload` (required).
 
 - Set the `DOCKER_HOST` environment variable:
 
@@ -23,4 +25,6 @@ To use:
 
 - Build `fpbuild` from <https://github.com/fpco/dev-tools> for your host platform, and put in your $PATH. [TODO: provide pre-built fpbuild binaries for common platforms]
 
-- Now use `fpbuild` normally from your host.
+- Now use `fpbuild` normally from your host.  You can also use `docker` commands from the host.
+
+To access a server running in a Docker container (e.g. `fpbuild doc-server`), you must connect to the VM's IP address instead of `localhost` (e.g. open <http://192.168.33.10:3003/> for the VM's default IP address).

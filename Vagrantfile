@@ -42,7 +42,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
     config.vm.synced_folder ".", "/vagrant", type: "nfs"
 
-    #CHANGEME: Change both values to the path to your home directory.
+    #CHANGEME: Change both values to the path to your home directory (or the directory that contains your projects).  You can add more of these if needed.
     #          On Windows, use 'type: "smb"' instead of nfs (this is un-tested).
     config.vm.synced_folder "/Users/manny", "/Users/manny", type: "nfs"
 
