@@ -7,6 +7,8 @@ TODO: I've only tested this on Mac OS X.  Ensure it works on Windows with SMB in
 
 Note: Docker in the VM to uses the new `overlay` storage driver (which requires a very recent Linux kernel).  In theory, this driver should not suffer from the various problems that devicemapper, aufs, and btrfs have.  We'll see...
 
+This also uses Vagrant's support for synced folders using NFS, which hopefully alleviates the inefficiency of VirtualBox shared folders.
+
 To use:
 
 - Search for `CHANGEME` in the `Vagrantfile` and `bootstrap.sh` for any areas you need to adjust for your system.
