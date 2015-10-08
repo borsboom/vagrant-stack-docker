@@ -37,13 +37,14 @@ To set up:
     Adjust the IP address if you changed the `PRIVATE_IP_ADDRESS` constant in
     the `Vagrantfile`.
 
- 4. Add this to your `~/.stack/config.yaml`:
+ 4. Add this to your `~/.stack/config.yaml`, as a workaround for
+    [docker/docker#11957](https://github.com/docker/docker/issues/11957):
 
         docker:
           run-args: ["--interactive=false"]
 
-    This is a workaround for
-    [docker/docker#11957](https://github.com/docker/docker/issues/11957).
+    Note that this means you will not be able to run interactive commands in the
+    Docker containers.
 
 Now use you can use `stack` with Docker enabled normally from your host. You can
 also use `docker` commands from the host.
