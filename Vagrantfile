@@ -20,7 +20,7 @@ DISK_SWAP_SIZE = 8192 # 8 GB
 
 # Adjust the private IP address if it conflicts with anything on your network.
 PRIVATE_IP_ADDRESS = "192.168.83.84"
-# Path to directory containing all your stack projects
+# Path to directory containing all your stack projects and your stack root (usually `~/.stack`).
 PROJECTS_DIRECTORY = ENV["HOME"]
 # UID and GID to match your user's values on your host OS.
 # Gives the Docker disk 4x usual # of inodes, since the overlay driver uses a lot
