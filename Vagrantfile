@@ -1,173 +1,85 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-VAGRANTFILE_API_VERSION = "2"
+#
+# Adjust the following constants:
+#
 
-Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  # All Vagrant configuration is done here. The most common configuration
-  # options are documented and commented below. For a complete reference,
-  # please see the online documentation at vagrantup.com.
+# Number of virtual CPUs to give the VM.
+VM_CPUS = 2
+# Amount of memory to dedicate to VM.
+VM_MEMORY = 2048 # 2 GB
+# Maximum size of Docker disk.
+DISK_DOCKER_SIZE = 100 * 1024 # 100 GB
+# Maximum size of swap disk.
+DISK_SWAP_SIZE = 8192 # 8 GB
 
-  # Every Vagrant virtual environment requires a box to build off of.
-    config.vm.box = "ubuntu/trusty64"
+#
+# The following constants are less frequently adjusted:
+#
 
-  # Disable automatic box update checking. If you disable this, then
-  # boxes will only be checked for updates when the user runs
-  # `vagrant box outdated`. This is not recommended.
-  # config.vm.box_check_update = false
+# Adjust the private IP address if it conflicts with anything on your network.
+PRIVATE_IP_ADDRESS = "192.168.83.84"
+# Path to directory containing all your stack projects
+PROJECTS_DIRECTORY = ENV["HOME"]
+# UID and GID to match your user's values on your host OS.
+# Gives the Docker disk 4x usual # of inodes, since the overlay driver uses a lot
+DISK_DOCKER_INODES = DISK_DOCKER_SIZE * 256
+# Directory to store extra virtual disks (for /var/lib/docker and swap).
+DISK_VDI_DIR = File.realpath( "." ).to_s
 
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine. In the example below,
-  # accessing "localhost:8080" will access port 80 on the guest machine.
-  # config.vm.network "forwarded_port", guest: 80, host: 8080
+#
+# Configuration
+#
 
-  # Create a private network, which allows host-only access to the machine
-  # using a specific IP.
-    #CHANGEME: Adjust the IP address if it conflicts with anything on your network.
-    config.vm.network "private_network", ip: "192.168.33.10"
-
-  # Create a public network, which generally matched to bridged network.
-  # Bridged networks make the machine appear as another physical device on
-  # your network.
-  # config.vm.network "public_network"
-
-  # If true, then any SSH connections made will enable agent forwarding.
-  # Default value: false
-  # config.ssh.forward_agent = true
-
-  # Share an additional folder to the guest VM. The first argument is
-  # the path on the host to the actual folder. The second argument is
-  # the path on the guest to mount the folder. And the optional third
-  # argument is a set of non-required options.
-
+Vagrant.configure(2) do |config|
+    config.vm.box = "ubuntu/vivid64"
+    #config.vm.box_check_update = false
+    config.vm.network "private_network", ip: PRIVATE_IP_ADDRESS
+    #config.vm.network "public_network"
+    config.ssh.forward_agent = true
     config.vm.synced_folder ".", "/vagrant", type: "nfs"
-
-    #CHANGEME: Change both values to the path to your home directory (or the directory that contains your projects).  You can add more of these if needed.
-    #          On Windows, use 'type: "smb"' instead of nfs (this is un-tested).
-    config.vm.synced_folder "/Users/manny", "/Users/manny", type: "nfs"
-
-  # Provider-specific configuration so you can fine-tune various
-  # backing providers for Vagrant. These expose provider-specific options.
-  # Example for VirtualBox:
-
+    config.vm.synced_folder PROJECTS_DIRECTORY, PROJECTS_DIRECTORY, type: "nfs"
     config.vm.provider "virtualbox" do |vb|
-  #   # Don't boot with headless mode
-  #   vb.gui = true
-
-      #CHANGEME: Adjust to match number of virtual CPUs on the host
-      vb.cpus = 8
-
-      # Use VBoxManage to customize the VM. For example to change memory:
-      #CHANGEME: Adjust amount of memory to dedicate to VM to suit.
-      vb.customize ["modifyvm", :id, "--memory", "4096"]
-
-      file_to_swap = File.realpath( "." ).to_s + "/swap.vdi"
-      if ARGV[0] == "up" && ! File.exist?(file_to_swap)
-          puts "Creating 8GB swap disk #{file_to_swap}."
-          vb.customize [
-              'createhd',
-              '--filename', file_to_swap,
-              '--format', 'VDI',
-              #CHANGEME: Adjust size of swap disk to suit.
-              '--size', 8 * 1024 # 8 GB
-              ]
-          vb.customize [
-              'storageattach', :id,
-              '--storagectl', 'SATAController',
-              '--port', 1, '--device', 0,
-              '--type', 'hdd', '--medium',
-              file_to_swap
-              ]
-      end
-
-      file_to_docker = File.realpath( "." ).to_s + "/docker.vdi"
-      if ARGV[0] == "up" && ! File.exist?(file_to_docker)
-          puts "Creating 200GB docker disk #{file_to_docker}."
-          vb.customize [
-              'createhd',
-              '--filename', file_to_docker,
-              '--format', 'VDI',
-              #CHANGEME: Adjust maximum size of Docker disk to suite.
-              #          If you change the size, also change # of inodes in bootstrap.sh
-              '--size', 200 * 1024 # 200 GB
-              ]
-          vb.customize [
-              'storageattach', :id,
-              '--storagectl', 'SATAController',
-              '--port', 2, '--device', 0,
-              '--type', 'hdd', '--medium',
-              file_to_docker
-              ]
-      end
-
+        #vb.gui = true
+        vb.cpus = VM_CPUS
+        vb.customize ["modifyvm", :id, "--memory", VM_MEMORY]
+        # Sync time with host if it's drifted more than a second
+        vb.customize ["guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold", 1000]
+        file_to_swap = DISK_VDI_DIR + "/swap.vdi"
+        if ARGV[0] == "up" && ! File.exist?(file_to_swap)
+            puts "Creating swap disk #{file_to_swap}."
+            vb.customize [
+                'createhd',
+                '--filename', file_to_swap,
+                '--format', 'VDI',
+                '--size', DISK_SWAP_SIZE
+                ]
+            vb.customize [
+                'storageattach', :id,
+                '--storagectl', 'SATAController',
+                '--port', 1, '--device', 0,
+                '--type', 'hdd', '--medium',
+                file_to_swap
+                ]
+        end
+        file_to_docker = DISK_VDI_DIR + "/docker.vdi"
+        if ARGV[0] == "up" && ! File.exist?(file_to_docker)
+            puts "Creating docker disk #{file_to_docker}."
+            vb.customize [
+                'createhd',
+                '--filename', file_to_docker,
+                '--format', 'VDI',
+                '--size', DISK_DOCKER_SIZE
+                ]
+            vb.customize [
+                'storageattach', :id,
+                '--storagectl', 'SATAController',
+                '--port', 2, '--device', 0,
+                '--type', 'hdd', '--medium',
+                file_to_docker
+                ]
+        end
     end
-  #
-  # View the documentation for the provider you're using for more
-  # information on available options.
-
-  # Enable provisioning with CFEngine. CFEngine Community packages are
-  # automatically installed. For example, configure the host as a
-  # policy server and optionally a policy file to run:
-  #
-  # config.vm.provision "cfengine" do |cf|
-  #   cf.am_policy_hub = true
-  #   # cf.run_file = "motd.cf"
-  # end
-  #
-  # You can also configure and bootstrap a client to an existing
-  # policy server:
-  #
-  # config.vm.provision "cfengine" do |cf|
-  #   cf.policy_server_address = "10.0.2.15"
-  # end
-
-  # Enable provisioning with Puppet stand alone.  Puppet manifests
-  # are contained in a directory path relative to this Vagrantfile.
-  # You will need to create the manifests directory and a manifest in
-  # the file default.pp in the manifests_path directory.
-  #
-  # config.vm.provision "puppet" do |puppet|
-  #   puppet.manifests_path = "manifests"
-  #   puppet.manifest_file  = "site.pp"
-  # end
-
-  # Enable provisioning with chef solo, specifying a cookbooks path, roles
-  # path, and data_bags path (all relative to this Vagrantfile), and adding
-  # some recipes and/or roles.
-  #
-  # config.vm.provision "chef_solo" do |chef|
-  #   chef.cookbooks_path = "../my-recipes/cookbooks"
-  #   chef.roles_path = "../my-recipes/roles"
-  #   chef.data_bags_path = "../my-recipes/data_bags"
-  #   chef.add_recipe "mysql"
-  #   chef.add_role "web"
-  #
-  #   # You may also specify custom JSON attributes:
-  #   chef.json = { mysql_password: "foo" }
-  # end
-
-  # Enable provisioning with chef server, specifying the chef server URL,
-  # and the path to the validation key (relative to this Vagrantfile).
-  #
-  # The Opscode Platform uses HTTPS. Substitute your organization for
-  # ORGNAME in the URL and validation key.
-  #
-  # If you have your own Chef Server, use the appropriate URL, which may be
-  # HTTP instead of HTTPS depending on your configuration. Also change the
-  # validation key to validation.pem.
-  #
-  # config.vm.provision "chef_client" do |chef|
-  #   chef.chef_server_url = "https://api.opscode.com/organizations/ORGNAME"
-  #   chef.validation_key_path = "ORGNAME-validator.pem"
-  # end
-  #
-  # If you're using the Opscode platform, your validator client is
-  # ORGNAME-validator, replacing ORGNAME with your organization name.
-  #
-  # If you have your own Chef Server, the default validation client name is
-  # chef-validator, unless you changed the configuration.
-  #
-  #   chef.validation_client_name = "ORGNAME-validator"
-
-    config.vm.provision "shell", path: "bootstrap.sh"
+    config.vm.provision "shell", path: "bootstrap.sh", args: [DISK_DOCKER_INODES]
 end

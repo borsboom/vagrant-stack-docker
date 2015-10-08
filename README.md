@@ -1,32 +1,53 @@
-Vagrantfile for fpbuild VM
-==========================
+Vagrantfile for Stack's Docker integration
+==========================================
 
-This sets up a VM that works nicely with fpbuild if you're on a non-Linux platform. This is a work-in-progress and has rough edges.  That said, it seems to work. The VM will also work for general Docker use without fpbuild.
+This sets up a VM that works reasonably well with
+[Stack's Docker integration](https://github.com/commercialhaskell/stack/blob/release/doc/docker_integration.md)
+if you're on a non-Linux platform. See
+[stack#194](https://github.com/commercialhaskell/stack/issues/194) for why
+boot2docker does not work with Stack's Docker integration. This is a
+work-in-progress and has rough edges. That said, it seems to work alright. The
+VM will also work for general Docker use without Stack.
 
-TODO: I've only tested this on Mac OS X.  Ensure it works on Windows with SMB instead of NFS.
+Docker in the VM is configured to use the new `overlay` storage driver. Despite
+its newness, I've had no problems with it, and every other driver has given me
+trouble when building large images, so I definitely recommend it.
 
-Note: Docker in the VM to uses the new `overlay` storage driver (which requires a very recent Linux kernel).  In theory, this driver should not suffer from the various problems that devicemapper, aufs, and btrfs have.  We'll see...
+This uses Vagrant's support for synced folders using NFS, which alleviates
+the extreme slowness of VirtualBox shared folders (see
+[boot2docker/boot2docker#593](https://github.com/boot2docker/boot2docker/issues/593)),
+but is still significantly slower than native filesystem mounting.
 
-This also uses Vagrant's support for synced folders using NFS, which hopefully alleviates the inefficiency of VirtualBox shared folders.
+NOTE (1): requires at least stack-0.1.6.0.
 
-To use:
+NOTE (2): only tested on Mac OS X. It definitely won't work on Windows, as it uses
+NFS, and Stack's Docker integration doesn't support Windows paths.
 
-- Search for `CHANGEME` in the `Vagrantfile` and `bootstrap.sh` for any areas you need to adjust for your system.
+To set up:
 
-    Most important is to set `VAGRANT_UID` and `VAGRANT_GID` in `bootstrap.sh` to your user's UID/GID address on the host (find those using `id -u` and `id -g`).
+ 1. Edit the `Vagrantfile` and adjust the constants at the top to your preference.
 
-- Run `vagrant up`.  You will probably have to enter your root password so that Vagrant can set up NFS.
+ 2. Run `vagrant up`. You will probably have to enter your root password (on the
+    host) so that Vagrant can set up its NFS exports.
 
-- Run `vagrant reload` (required).
+ 3. Set the `DOCKER_HOST` environment variable:
 
-- Set the `DOCKER_HOST` environment variable:
+        export DOCKER_HOST="tcp://192.168.83.84:2375"
 
-        export DOCKER_HOST="tcp://192.168.33.10:2375"
+    Adjust the IP address if you changed the `PRIVATE_IP_ADDRESS` constant in
+    the `Vagrantfile`.
 
-    Adjust the IP address if you changed the `private_network` in `Vagrantfile`.
+ 4. Add this to your `~/.stack/config.yaml`:
 
-- Build `fpbuild` from <https://github.com/fpco/dev-tools> for your host platform, and put in your $PATH. [TODO: provide pre-built fpbuild binaries for common platforms]
+        docker:
+          run-args: ["--interactive=false"]
 
-- Now use `fpbuild` normally from your host.  You can also use `docker` commands from the host.
+    This is a workaround for
+    [docker/docker#11957](https://github.com/docker/docker/issues/11957).
 
-To access a server running in a Docker container (e.g. `fpbuild doc-server`), you must connect to the VM's IP address instead of `localhost` (e.g. open <http://192.168.33.10:3003/> for the VM's default IP address).
+Now use you can use `stack` with Docker enabled normally from your host. You can
+also use `docker` commands from the host.
+
+To access server processes running in a Docker container (e.g. `stack exec warp`),
+you must connect to the VM's IP address instead of `localhost` (e.g. open
+<http://192.168.83.84:3000/>).
