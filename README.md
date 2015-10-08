@@ -18,10 +18,10 @@ the extreme slowness of VirtualBox shared folders (see
 [boot2docker/boot2docker#593](https://github.com/boot2docker/boot2docker/issues/593)),
 but is still significantly slower than native filesystem mounting.
 
-NOTE (1): requires at least stack-0.1.6.0.
+**Note: requires at least stack-0.1.6.0.**
 
-NOTE (2): only tested on Mac OS X. It definitely won't work on Windows, as it uses
-NFS, and Stack's Docker integration doesn't support Windows paths.
+**Note: only tested on Mac OS X.** It definitely won't work on Windows, as it uses
+NFS, and Stack's Docker integration doesn't support Windows paths.**
 
 To set up:
 
