@@ -21,7 +21,7 @@ but is still significantly slower than native filesystem mounting.
 **Note: requires at least stack-0.1.6.0 and Docker 1.9.1**
 
 **Note: only tested on Mac OS X.** It definitely won't work on Windows, as it uses
-NFS, and Stack's Docker integration doesn't support Windows paths.**
+NFS, and Stack's Docker integration doesn't support Windows paths.
 
 To set up:
 
