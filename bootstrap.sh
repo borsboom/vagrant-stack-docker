@@ -2,8 +2,6 @@
 
 set -xe
 
-DOCKER_INODES="$1"
-
 cd /tmp
 
 apt-get update
@@ -29,10 +27,13 @@ fi
 # Setup /var/lib/docker filesystem
 # quadruple the usual number of inodes, since overlay creates a lot of files
 if ! grep '^/dev/sdc\b' /etc/fstab; then
-    mkfs -F -t ext4 -N $DOCKER_INODES /dev/sdc
+    mkfs -F -t ext4 -i 4096 /dev/sdc
     echo "/dev/sdc /var/lib/docker ext4 defaults,nofail 0 2" >>/etc/fstab
+    (which docker && service docker stop) || true
+    rm -rf /var/lib/docker
     mkdir -p /var/lib/docker
     mount /var/lib/docker
+    (which docker && service docker start) || true
 fi
 
 # Install Docker
@@ -49,7 +50,7 @@ if ! which docker; then
 [Service]
 EnvironmentFile=/etc/default/docker
 ExecStart=
-ExecStart=/usr/bin/docker -d -H fd:// $DOCKER_OPTS
+ExecStart=/usr/bin/docker daemon -H fd:// $DOCKER_OPTS
 EOF
     systemctl daemon-reload
     service docker start
@@ -58,7 +59,7 @@ fi
 # Install stack
 if ! which stack; then
     wget -qO- https://s3.amazonaws.com/download.fpcomplete.com/ubuntu/fpco.key | sudo apt-key add -
-    echo 'deb http://download.fpcomplete.com/ubuntu/vivid stable main'|sudo tee /etc/apt/sources.list.d/fpco.list
+    echo 'deb http://download.fpcomplete.com/ubuntu wily main'|sudo tee /etc/apt/sources.list.d/fpco.list
     apt-get update
     apt-get install -y stack
 fi

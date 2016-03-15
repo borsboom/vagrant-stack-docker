@@ -22,9 +22,6 @@ DISK_SWAP_SIZE = 8192 # 8 GB
 PRIVATE_IP_ADDRESS = "192.168.83.84"
 # Path to directory containing all your stack projects and your stack root (usually `~/.stack`).
 PROJECTS_DIRECTORY = ENV["HOME"]
-# UID and GID to match your user's values on your host OS.
-# Gives the Docker disk 4x usual # of inodes, since the overlay driver uses a lot
-DISK_DOCKER_INODES = DISK_DOCKER_SIZE * 256
 # Directory to store extra virtual disks (for /var/lib/docker and swap).
 DISK_VDI_DIR = File.realpath( "." ).to_s
 
@@ -33,7 +30,7 @@ DISK_VDI_DIR = File.realpath( "." ).to_s
 #
 
 Vagrant.configure(2) do |config|
-    config.vm.box = "ubuntu/vivid64"
+    config.vm.box = "ubuntu/wily64"
     #config.vm.box_check_update = false
     config.vm.network "private_network", ip: PRIVATE_IP_ADDRESS
     #config.vm.network "public_network"
@@ -81,5 +78,5 @@ Vagrant.configure(2) do |config|
                 ]
         end
     end
-    config.vm.provision "shell", path: "bootstrap.sh", args: [DISK_DOCKER_INODES]
+    config.vm.provision "shell", path: "bootstrap.sh"
 end
